@@ -7,4 +7,5 @@ __pycache__/
 .ruff_cache/
 .playwright-mcp/
 handsomebench-no-label-clipping.png
+handsomebench-all-rankings-wide.png
 .DS_Store

@@ -57,7 +57,7 @@ def short_label(row: dict[str, str]) -> str:
     return model
 
 
-def load_rows(src: Path) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+def load_rows(src: Path) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
     valid: list[dict[str, str]] = []
     invalid: list[dict[str, str]] = []
     with src.open(newline="", encoding="utf-8") as handle:
@@ -67,23 +67,23 @@ def load_rows(src: Path) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
             elif row.get("status"):
                 invalid.append(row)
     valid.sort(key=lambda row: (-(float(row["score"])), float(row.get("latency_ms") or 0)))
-    return valid, invalid
+    return valid, invalid, valid + invalid
 
 
 def render(result_dir: Path = RESULT_DIR) -> None:
     src = result_dir / "leaderboard.csv"
     out = result_dir / "HandsomeBench.html"
-    rows, invalid_rows = load_rows(src)
-    width = max(930, len(rows) * 29 + 122)
-    height = 540
-    left = 26
-    right = 82
+    rows, invalid_rows, chart_rows = load_rows(src)
+    width = 1480
+    height = 520
+    left = 24
+    right = 48
     top = 32
     plot_height = 260
     baseline = top + plot_height
     plot_width = width - left - right
     gap = 5
-    bar_width = max(20, (plot_width - gap * (len(rows) - 1)) / len(rows))
+    bar_width = max(12, (plot_width - gap * (len(chart_rows) - 1)) / len(chart_rows))
     grid = []
     for tick in (25, 50, 75, 100):
         y = baseline - plot_height * tick / 100
@@ -93,20 +93,22 @@ def render(result_dir: Path = RESULT_DIR) -> None:
 
     bars = []
     labels = []
-    for index, row in enumerate(rows):
-        score = float(row["score"])
+    for index, row in enumerate(chart_rows):
+        status = row.get("status")
+        score = float(row["score"]) if status == "ok" else 0.0
         provider = row["provider"]
         x = left + index * (bar_width + gap)
-        h = plot_height * score / 100
+        h = plot_height * score / 100 if status == "ok" else 18
         y = baseline - h
         cx = x + bar_width / 2
         color = PROVIDER_COLORS.get(provider, "#64748b")
         badge = PROVIDER_BADGES.get(provider, provider[:2].upper())
-        title = f"#{index + 1} {row['label']} {row.get('reasoning') or ''} - {score:g}"
+        score_label = f"{score:g}" if status == "ok" else status
+        title = f"#{index + 1} {row['label']} {row.get('reasoning') or ''} - {score_label}"
         bars.append(
-            f'<g class="bar"><title>{html.escape(title)}</title>'
+            f'<g class="bar {html.escape(status or "")}"><title>{html.escape(title)}</title>'
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{h:.1f}" rx="4" fill="{color}" />'
-            f'<text x="{cx:.1f}" y="{y + h / 2 + 4:.1f}" class="score" text-anchor="middle">{score:g}</text>'
+            f'<text x="{cx:.1f}" y="{y + h / 2 + 4:.1f}" class="score" text-anchor="middle">{html.escape(score_label)}</text>'
             f'<circle cx="{cx:.1f}" cy="{baseline + 13}" r="7" fill="#fff" />'
             f'<text x="{cx:.1f}" y="{baseline + 17}" class="badge-text" text-anchor="middle">{html.escape(badge)}</text>'
             f"</g>"
@@ -153,20 +155,22 @@ def render(result_dir: Path = RESULT_DIR) -> None:
 :root {{ --ink:#1f1f1f; --muted:#5f6368; --grid:#dddddd; --accent:#8b5cf6; }}
 * {{ box-sizing:border-box; }}
 body {{ margin:0; background:#fff; color:var(--ink); font-family: Arial, Helvetica, sans-serif; }}
-main {{ max-width:980px; margin:0 auto; padding:14px 24px 28px; }}
+main {{ max-width:1528px; margin:0 auto; padding:14px 24px 28px; }}
 .topline {{ display:flex; justify-content:flex-end; align-items:center; gap:7px; padding:0 0 6px; font-family: Georgia, "Times New Roman", serif; font-size:15px; }}
 .spark {{ width:14px; height:14px; color:var(--accent); }}
 .rule {{ border-top:2px dotted #dadce0; margin-bottom:16px; }}
 h1 {{ margin:0; font-size:22px; letter-spacing:-.02em; font-weight:700; }}
 .subtitle {{ margin:4px 0 10px; color:var(--muted); font-size:13px; }}
-.chart-wrap {{ overflow-x:auto; padding-bottom:4px; }}
-svg {{ display:block; min-width:{width}px; }}
+.chart-wrap {{ overflow-x:visible; padding-bottom:4px; }}
+svg {{ display:block; width:100%; height:auto; }}
 .grid {{ stroke:var(--grid); stroke-width:1.25; stroke-dasharray:1 4; stroke-linecap:round; }}
 .axis {{ stroke:#e5e7eb; stroke-width:1; }}
 .score {{ fill:#fff; font-size:10px; font-weight:700; pointer-events:none; }}
 .badge-text {{ fill:#111; font-size:9px; font-weight:800; font-family: Arial, Helvetica, sans-serif; }}
 .model-label {{ fill:#111; font-size:10px; font-weight:600; }}
 .bar rect {{ transition:opacity .15s ease; }}
+.bar.invalid rect, .bar.error rect, .bar.skipped rect {{ opacity:.42; }}
+.bar.invalid .score, .bar.error .score, .bar.skipped .score {{ font-size:7px; }}
 .bar:hover rect {{ opacity:.72; }}
 .summary {{ display:flex; flex-wrap:wrap; gap:8px 16px; margin:8px 0 10px; color:var(--muted); font-size:12px; }}
 .summary b {{ color:var(--ink); }}
@@ -191,12 +195,13 @@ footer {{ margin-top:8px; color:var(--muted); font-size:11px; }}
   <div class="summary">
     <span>Champion: <b>{html.escape(champion['label'])}</b></span>
     <span>Score: <b>{float(champion['score']):g}</b></span>
+    <span>Ranked entries: <b>{len(chart_rows)}</b></span>
     <span>Valid scored rows: <b>{len(rows)}</b></span>
   </div>
   <section class="chart-wrap" aria-label="HandsomeBench leaderboard chart">
     <svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="chart-title chart-desc">
       <title id="chart-title">HandsomeBench</title>
-      <desc id="chart-desc">Bars are sorted by score from highest on the left to lowest on the right.</desc>
+      <desc id="chart-desc">All entries are shown. Scored bars are sorted from highest on the left to lowest, followed by invalid, error, and skipped entries.</desc>
       {''.join(grid)}
       <line x1="{left}" y1="{baseline}" x2="{width - right}" y2="{baseline}" class="axis" />
       {''.join(bars)}
@@ -215,7 +220,7 @@ footer {{ margin-top:8px; color:var(--muted); font-size:11px; }}
       <tbody>{''.join(invalid_table_rows)}</tbody>
     </table>
   </section>
-  <footer>Source: {html.escape(str(src))}. {len(invalid_rows)} invalid/error/skipped rows omitted from scored bars.</footer>
+  <footer>Source: {html.escape(str(src))}. Invalid/error/skipped entries are shown as short baseline bars after scored entries.</footer>
 </main>
 </body>
 </html>
