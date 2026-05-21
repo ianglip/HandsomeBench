@@ -70,10 +70,10 @@ def load_rows() -> tuple[list[dict[str, str]], int]:
 
 def render() -> None:
     rows, invalid = load_rows()
-    width = max(860, len(rows) * 29 + 52)
+    width = max(930, len(rows) * 29 + 122)
     height = 540
     left = 26
-    right = 12
+    right = 82
     top = 32
     plot_height = 260
     baseline = top + plot_height
