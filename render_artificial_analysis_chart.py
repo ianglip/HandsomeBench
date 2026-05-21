@@ -69,7 +69,7 @@ def load_rows(src: Path) -> tuple[list[dict[str, str]], list[dict[str, str]], li
             elif row.get("status"):
                 invalid.append(row)
     valid.sort(key=lambda row: (-(float(row["score"])), float(row.get("latency_ms") or 0)))
-    return valid, invalid, valid + invalid
+    return valid, invalid, valid
 
 
 def render(result_dir: Path = RESULT_DIR) -> None:
@@ -197,13 +197,14 @@ footer {{ margin-top:8px; color:var(--muted); font-size:11px; }}
   <div class="summary">
     <span>Champion: <b>{html.escape(champion['label'])}</b></span>
     <span>Score: <b>{float(champion['score']):g}</b></span>
-    <span>Ranked entries: <b>{len(chart_rows)}</b></span>
+    <span>Displayed bars: <b>{len(chart_rows)}</b></span>
     <span>Valid scored rows: <b>{len(rows)}</b></span>
+    <span>Invalid/error/skipped rows: <b>{len(invalid_rows)}</b></span>
   </div>
   <section class="chart-wrap" aria-label="HandsomeBench leaderboard chart">
     <svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="chart-title chart-desc">
       <title id="chart-title">HandsomeBench</title>
-      <desc id="chart-desc">All entries are shown. Scored bars are sorted from highest on the left to lowest, followed by invalid, error, and skipped entries.</desc>
+      <desc id="chart-desc">Valid scored entries are sorted from highest on the left to lowest. Invalid, error, and skipped entries are listed in the audit table below.</desc>
       {''.join(grid)}
       <line x1="{left}" y1="{baseline}" x2="{width - right}" y2="{baseline}" class="axis" />
       {''.join(bars)}
@@ -222,7 +223,7 @@ footer {{ margin-top:8px; color:var(--muted); font-size:11px; }}
       <tbody>{''.join(invalid_table_rows)}</tbody>
     </table>
   </section>
-  <footer>Source: {html.escape(str(src))}. Invalid/error/skipped entries are shown as short baseline bars after scored entries.</footer>
+  <footer>Source: {html.escape(str(src))}. Invalid/error/skipped entries are excluded from the chart and listed in the audit table.</footer>
 </main>
 </body>
 </html>
