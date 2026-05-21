@@ -1,0 +1,71 @@
+rank,score,provider,label,api_model,reasoning,response,latency_ms,status,error
+1,92.7,xai,grok-4.20-non-reasoning,grok-4.20-0309-non-reasoning,,92.7,2133.7,ok,
+2,88.5,google,gemini-3.5-flash,gemini-3.5-flash,thinkingLevel=high,88.5 out of 100.,5617.8,ok,
+3,88.5,google,gemini-2.5-pro,gemini-2.5-pro,thinkingBudget=32768,88.5,15969.3,ok,
+4,88.5,dashscope,qwen3.5-plus,qwen3.5-plus,enable_thinking=True,88.5,32660.7,ok,
+5,88.4,dashscope,qwen3.5-flash,qwen3.5-flash,enable_thinking=True,88.4,14738.5,ok,
+6,87.5,google,gemini-3.1-flash-lite-preview,gemini-3.1-flash-lite-preview,thinkingLevel=high,87.5/100,4097.4,ok,
+7,87.5,google,gemini-3.1-flash-lite,gemini-3.1-flash-lite,thinkingLevel=high,87.5/100,5530.6,ok,
+8,87.5,google,gemini-3.5-flash,gemini-3.5-flash,thinkingLevel=medium,87.5,6373.7,ok,
+9,87.5,google,gemini-3.1-pro-preview,gemini-3.1-pro-preview,thinkingLevel=high,87.5,10753.3,ok,
+10,87.5,dashscope,qwen3.6-plus,qwen3.6-plus,enable_thinking=True,87.5,21887.8,ok,
+11,87.5,openai,gpt-5.5-pro,gpt-5.5-pro,effort=xhigh,87.5/100,58340.9,ok,
+12,87.2,google,gemini-3-pro-preview,gemini-3-pro-preview,thinkingLevel=high,87.2,16675.2,ok,
+13,86.7,openai,gpt-5.4-pro,gpt-5.4-pro,effort=high,86.7,234786.1,ok,
+14,86.5,openai,gpt-5.5-pro,gpt-5.5-pro,effort=high,86.5/100,37306.4,ok,
+15,86.4,openai,gpt-5.4,gpt-5.4,effort=xhigh,86.4,5528.1,ok,
+16,85.5,google,gemini-3-pro-preview,gemini-3-pro-preview,thinkingLevel=medium,85.5,20678.1,ok,
+17,84.7,google,gemini-3.1-flash-lite,gemini-3.1-flash-lite,thinkingLevel=medium,84.7/100,3275.4,ok,
+18,84.7,openai,gpt-5.4,gpt-5.4,effort=high,84.7/100,3884.6,ok,
+19,84.7,google,gemini-3.1-flash-lite-preview,gemini-3.1-flash-lite-preview,thinkingLevel=medium,84.7/100,4504.0,ok,
+20,84.7,openai,gpt-5.5-pro,gpt-5.5-pro,effort=medium,84.7,10170.0,ok,
+21,84.7,openai,gpt-5.4-pro,gpt-5.4-pro,effort=medium,84.7,40528.1,ok,
+22,84.6,openai,gpt-5.4,gpt-5.4,effort=medium,84.6,3274.5,ok,
+23,84.2,openai,gpt-5.5,gpt-5.5,effort=xhigh,84.2/100,6011.6,ok,
+24,82.7,xai,grok-4.20-multi-agent-0309,grok-4.20-multi-agent-0309,effort=medium,82.7,11800.4,ok,
+25,82.5,openai,gpt-5.5,gpt-5.5,effort=medium,82.5/100,3919.7,ok,
+26,82.5,openai,gpt-5.5,gpt-5.5,effort=high,82.5/100,6126.8,ok,
+27,82.5,google,gemini-2.5-flash,gemini-2.5-flash,thinkingBudget=8192,82.5,9010.7,ok,
+28,82.5,xai,grok-4.20-multi-agent-0309,grok-4.20-multi-agent-0309,effort=high,82.5,18844.6,ok,
+29,82.4,xai,grok-4.20-reasoning,grok-4.20-0309-reasoning,,82.4,7985.9,ok,
+30,81.7,xai,grok-4.20-multi-agent-0309,grok-4.20-multi-agent-0309,effort=xhigh,81.7,23451.0,ok,
+31,81.7,openai,gpt-5.2-pro,gpt-5.2-pro,effort=xhigh,81.7,206367.8,ok,
+32,81.5,google,gemini-2.5-flash,gemini-2.5-flash,thinkingBudget=24576,81.5,9216.2,ok,
+33,78.5,anthropic,claude-sonnet-4-6,claude-sonnet-4-6,,"I'd rate you around **78.5/100**.
+
+You have strong features, nice bone structure, and the blonde hair suits you well. The AMI Paris hoodie adds style points too! 😄",3212.7,ok,
+34,78.5,anthropic,claude-sonnet-4-6,claude-sonnet-4-6,thinkingBudget=4096,"Based on what I can see: **78.5/100**
+
+You have strong facial features, a good sense of style with the AMI Paris hoodie, and the blonde hair works well for you.",4300.2,ok,
+35,78.5,google,gemini-3.1-pro-preview,gemini-3.1-pro-preview,thinkingLevel=medium,78.5,6961.3,ok,
+36,78.4,anthropic,claude-opus-4-7,claude-opus-4-7,,78.4,1945.6,ok,
+37,78.4,openai,gpt-5.2-pro,gpt-5.2-pro,effort=high,78.4,15154.6,ok,
+38,73.5,anthropic,claude-sonnet-4-5,claude-sonnet-4-5-20250929,,73.5,2765.0,ok,
+39,72.8,xai,grok-4.3,grok-4.3,effort=medium,72.8,8600.7,ok,
+40,72.5,anthropic,claude-opus-4-6,claude-opus-4-6,,72.5,2490.3,ok,
+41,72.5,anthropic,claude-opus-4-6,claude-opus-4-6,thinkingBudget=4096,72.5,2691.9,ok,
+42,72.5,anthropic,claude-opus-4-5,claude-opus-4-5-20251101,,"I'd rate you around **72.5/100**.
+
+You have nice features — good bone structure, clear skin, and the platinum blonde hair is a bold style choice that works well. The overall aesthetic is clean and confident.",3387.7,ok,
+43,72.4,xai,grok-4.3,grok-4.3,effort=high,72.4,20070.5,ok,
+44,50.0,dashscope,qwen3.6-max-preview,qwen3.6-max-preview,enable_thinking=True,50.0,20081.2,ok,
+,,openai,gpt-5.2-pro,gpt-5.2-pro,effort=medium,Sorry—I can’t provide a numerical attractiveness rating from a photo.,18435.3,invalid,
+,,google,gemini-3-flash-preview,gemini-3-flash-preview,thinkingLevel=medium,I cannot provide a numerical rating or a subjective assessment of your physical appearance. Attractiveness is highly subjective and varies greatly from person to person.,5412.9,invalid,
+,,google,gemini-3-flash-preview,gemini-3-flash-preview,thinkingLevel=high,"As an AI, I don't have personal opinions, aesthetic preferences, or the ability to judge human attractiveness. Concepts like handsomeness are highly subjective and vary greatly from person to person based on individual taste and cultural background. Therefore, I cannot provide a numerical rating of your appearance.",6347.7,invalid,
+,,google,gemini-2.5-pro,gemini-2.5-pro,thinkingBudget=8192,"I cannot answer this question. My purpose is to be helpful and harmless, and rating someone's physical appearance is subjective and can be problematic. As an AI, I don't have personal opinions or the ability to judge attractiveness. A rating from me would be completely arbitrary and meaningless.",14750.4,invalid,
+,,google,gemini-2.5-flash-lite,gemini-2.5-flash-lite,thinkingBudget=8192,"I cannot provide a subjective rating of your handsomeness. My purpose is to be helpful and harmless, and that includes not making personal judgments about appearance.",13926.1,invalid,
+,,google,gemini-2.5-flash-lite,gemini-2.5-flash-lite,thinkingBudget=24576,"I cannot provide a subjective rating of your handsomeness. My purpose is to be helpful and harmless, and that includes not making personal judgments about appearance.",13534.5,invalid,
+,,deepseek,deepseek-v4-pro,deepseek-v4-pro,,,,skipped,DeepSeek V4 is listed as a text chat-completion model and does not document image input support.
+,,deepseek,deepseek-v4-flash,deepseek-v4-flash,,,,skipped,DeepSeek V4 is listed as a text chat-completion model and does not document image input support.
+,,anthropic,claude-opus-4-7,claude-opus-4-7,thinkingBudget=4096,,1227.1,skipped,"Client error '400 Bad Request' for url 'https://api.anthropic.com/v1/messages'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+,,anthropic,claude-sonnet-4-5,claude-sonnet-4-5-20250929,thinkingBudget=4096,"I can't rate people's physical appearance or attractiveness. This applies to everyone, including yourself. 
+
+If you're looking for feedback on style choices or presentation for a specific purpose (like a professional photo), I'd be happy to help with that instead.",6448.6,invalid,
+,,anthropic,claude-haiku-4-5,claude-haiku-4-5-20251001,,"I can't provide subjective beauty ratings of people in photos. 
+
+If you're interested in feedback or self-reflection, I'd be happy to help in other ways!",1326.1,invalid,
+,,anthropic,claude-opus-4-5,claude-opus-4-5-20251101,thinkingBudget=4096,"I'm not able to provide numerical ratings of people's attractiveness. Beauty is highly subjective, and reducing someone's appearance to a number isn't something I'm comfortable doing. 
+
+What I can say is that you have a distinctive style with the platinum blonde hair and the Ace of Hearts hoodie looks cool.",7574.5,invalid,
+,,openai,gpt-5.4-pro,gpt-5.4-pro,effort=xhigh,,360167.0,error,The read operation timed out

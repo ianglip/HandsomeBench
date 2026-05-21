@@ -76,17 +76,17 @@ class RunConfig:
 ROSTER: tuple[ModelSpec, ...] = (
     ModelSpec("openai", "gpt-5.5-pro", reasoning_kind="effort", reasoning_values=("medium", "high", "xhigh")),
     ModelSpec("openai", "gpt-5.5", reasoning_kind="effort", reasoning_values=("medium", "high", "xhigh")),
-    ModelSpec("linkapi", "claude-opus-4-7", api_model="[次]claude-opus-4-7"),
-    ModelSpec("linkapi", "claude-opus-4-7-thinking", label="claude-opus-4-7", api_model="[次]claude-opus-4-7-thinking"),
-    ModelSpec("linkapi", "claude-opus-4-6", api_model="claude-opus-4-6"),
-    ModelSpec("linkapi", "claude-opus-4-6-thinking", label="claude-opus-4-6", api_model="claude-opus-4-6-thinking"),
-    ModelSpec("linkapi", "claude-sonnet-4-6", api_model="claude-sonnet-4-6"),
-    ModelSpec("linkapi", "claude-sonnet-4-6-thinking", label="claude-sonnet-4-6", api_model="claude-sonnet-4-6-thinking"),
-    ModelSpec("linkapi", "claude-sonnet-4-5-20250929", label="claude-sonnet-4-5", api_model="claude-sonnet-4-5-20250929"),
-    ModelSpec("linkapi", "claude-sonnet-4-5-20250929-thinking", label="claude-sonnet-4-5", api_model="claude-sonnet-4-5-20250929-thinking"),
-    ModelSpec("linkapi", "claude-haiku-4-5-20251001", label="claude-haiku-4-5", api_model="claude-haiku-4-5-20251001"),
-    ModelSpec("linkapi", "claude-opus-4-5-20251101", label="claude-opus-4-5", api_model="claude-opus-4-5-20251101"),
-    ModelSpec("linkapi", "claude-opus-4-5-20251101-thinking", label="claude-opus-4-5", api_model="claude-opus-4-5-20251101-thinking"),
+    ModelSpec("anthropic", "claude-opus-4-7"),
+    ModelSpec("anthropic", "claude-opus-4-7", reasoning_kind="thinkingBudget", reasoning_values=(4096,)),
+    ModelSpec("anthropic", "claude-opus-4-6"),
+    ModelSpec("anthropic", "claude-opus-4-6", reasoning_kind="thinkingBudget", reasoning_values=(4096,)),
+    ModelSpec("anthropic", "claude-sonnet-4-6"),
+    ModelSpec("anthropic", "claude-sonnet-4-6", reasoning_kind="thinkingBudget", reasoning_values=(4096,)),
+    ModelSpec("anthropic", "claude-sonnet-4-5-20250929", label="claude-sonnet-4-5"),
+    ModelSpec("anthropic", "claude-sonnet-4-5-20250929", label="claude-sonnet-4-5", reasoning_kind="thinkingBudget", reasoning_values=(4096,)),
+    ModelSpec("anthropic", "claude-haiku-4-5-20251001", label="claude-haiku-4-5"),
+    ModelSpec("anthropic", "claude-opus-4-5-20251101", label="claude-opus-4-5"),
+    ModelSpec("anthropic", "claude-opus-4-5-20251101", label="claude-opus-4-5", reasoning_kind="thinkingBudget", reasoning_values=(4096,)),
     ModelSpec("google", "gemini-3-pro-preview", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
     ModelSpec("google", "gemini-3.1-pro-preview", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
     ModelSpec("google", "gemini-3.1-flash-lite", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
@@ -117,6 +117,7 @@ PROVIDER_KEYS = {
     "google": "GOOGLE_AI_API_KEY",
     "xai": "XAI_API_KEY",
     "dashscope": "DASHSCOPE_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
     "linkapi": "LINKAPI_API_KEY",
     "deepseek": "DEEPSEEK_API_KEY",
 }
@@ -218,6 +219,28 @@ def response_text_from_gemini(data: dict[str, Any]) -> str:
     return "".join(chunks).strip()
 
 
+def response_text_from_anthropic(data: dict[str, Any]) -> str:
+    chunks: list[str] = []
+    for block in data.get("content", []) or []:
+        if isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str):
+            chunks.append(block["text"])
+    return "".join(chunks).strip()
+
+
+def is_truncated_response(provider: str, data: dict[str, Any]) -> bool:
+    """Return True when the provider says the answer hit an output-token limit."""
+    if provider == "google":
+        return any(candidate.get("finishReason") == "MAX_TOKENS" for candidate in data.get("candidates", []) or [] if isinstance(candidate, dict))
+    if provider == "anthropic":
+        return data.get("stop_reason") == "max_tokens"
+    if data.get("status") == "incomplete" or data.get("incomplete_details"):
+        return True
+    for choice in data.get("choices", []) or []:
+        if isinstance(choice, dict) and choice.get("finish_reason") == "length":
+            return True
+    return False
+
+
 def request_openai(config: RunConfig, data_url: str, timeout: float) -> tuple[str, dict[str, Any]]:
     key = os.environ["OPENAI_API_KEY"]
     payload: dict[str, Any] = {
@@ -291,6 +314,36 @@ def request_gemini(config: RunConfig, data_url: str, timeout: float) -> tuple[st
     return response_text_from_gemini(data), data
 
 
+def request_anthropic(config: RunConfig, data_url: str, timeout: float) -> tuple[str, dict[str, Any]]:
+    key = os.environ["ANTHROPIC_API_KEY"]
+    mime, encoded = data_url.split(";base64,", 1)
+    mime_type = mime.removeprefix("data:")
+    max_tokens = DEFAULT_MAX_OUTPUT_TOKENS
+    payload: dict[str, Any] = {
+        "model": config.api_model,
+        "max_tokens": max_tokens,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": mime_type, "data": encoded}},
+                    {"type": "text", "text": PROMPT},
+                ],
+            }
+        ],
+    }
+    if config.reasoning_kind == "thinkingBudget":
+        budget = int(config.reasoning_value)
+        payload["thinking"] = {"type": "enabled", "budget_tokens": budget}
+        payload["max_tokens"] = max(max_tokens, budget + 256)
+    headers = {"x-api-key": key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"}
+    with httpx.Client(timeout=timeout) as client:  # type: ignore[union-attr]
+        response = client.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+    return response_text_from_anthropic(data), data
+
+
 def request_openai_compatible_chat(
     *,
     base_url: str,
@@ -355,6 +408,7 @@ REQUESTERS = {
     "google": request_gemini,
     "xai": request_xai,
     "dashscope": request_dashscope,
+    "anthropic": request_anthropic,
     "linkapi": request_linkapi,
 }
 
@@ -383,9 +437,11 @@ def run_one(config: RunConfig, data_url: str, timeout: float) -> dict[str, Any]:
     try:
         text, raw = REQUESTERS[config.provider](config, data_url, timeout)
         latency_ms = round((time.perf_counter() - start) * 1000, 1)
-        score = parse_score(text)
+        truncated = is_truncated_response(config.provider, raw)
+        score = None if truncated else parse_score(text)
         status = "ok" if score is not None else "invalid"
-        return make_row(config, status, score=score, response=text, raw=raw, latency_ms=latency_ms)
+        error = "Truncated by provider output-token limit; score ignored." if truncated else None
+        return make_row(config, status, score=score, response=text, raw=raw, latency_ms=latency_ms, error=error)
     except httpx.HTTPStatusError as exc:  # type: ignore[union-attr]
         latency_ms = round((time.perf_counter() - start) * 1000, 1)
         error = clean_error(exc)
@@ -421,6 +477,13 @@ def clean_error(exc: Exception) -> str:
         if key:
             text = text.replace(key, "<redacted>")
     return text
+
+
+def model_list_headers(provider: str, key_name: str) -> dict[str, str]:
+    key = os.environ[key_name]
+    if provider == "anthropic":
+        return {"x-api-key": key, "anthropic-version": "2023-06-01"}
+    return {"Authorization": f"Bearer {key}"}
 
 
 def model_ids_from_response(data: dict[str, Any], provider: str) -> set[str]:
@@ -527,6 +590,7 @@ def preflight(configs: list[RunConfig], timeout: float) -> int:
         ("openai", "https://api.openai.com/v1/models", "OPENAI_API_KEY"),
         ("xai", "https://api.x.ai/v1/models", "XAI_API_KEY"),
         ("dashscope", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models", "DASHSCOPE_API_KEY"),
+        ("anthropic", "https://api.anthropic.com/v1/models", "ANTHROPIC_API_KEY"),
         ("linkapi", "https://api.linkapi.ai/v1/models", "LINKAPI_API_KEY"),
         ("deepseek", "https://api.deepseek.com/models", "DEEPSEEK_API_KEY"),
     ]
@@ -539,7 +603,7 @@ def preflight(configs: list[RunConfig], timeout: float) -> int:
             continue
         try:
             with httpx.Client(timeout=timeout) as client:  # type: ignore[union-attr]
-                response = client.get(url, headers={"Authorization": f"Bearer {os.environ[key_name]}"})
+                response = client.get(url, headers=model_list_headers(provider, key_name))
                 response.raise_for_status()
                 available_by_provider[provider] = model_ids_from_response(response.json(), provider)
             print(f"{provider}: model list OK")
@@ -582,7 +646,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--preflight", action="store_true", help="Check environment, image, and provider model-list endpoints.")
     parser.add_argument("--timeout", type=float, default=180.0, help="Per-request timeout in seconds.")
     parser.add_argument("--limit", type=int, default=None, help="Run only the first N configurations.")
-    parser.add_argument("--providers", help="Comma-separated provider allowlist, for example google,linkapi,deepseek.")
+    parser.add_argument("--providers", help="Comma-separated provider allowlist, for example google,anthropic,deepseek.")
+    parser.add_argument("--config-contains", help="Run only configurations whose ID contains this text.")
     return parser.parse_args(argv)
 
 
@@ -593,6 +658,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.providers:
         providers = {provider.strip() for provider in args.providers.split(",") if provider.strip()}
         configs = [config for config in configs if config.provider in providers]
+    if args.config_contains:
+        configs = [config for config in configs if args.config_contains in config.config_id]
     if args.limit is not None:
         configs = configs[: args.limit]
     if args.dry_run:

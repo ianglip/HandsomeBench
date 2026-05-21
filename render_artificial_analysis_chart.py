@@ -9,13 +9,14 @@ import argparse
 from pathlib import Path
 
 
-RESULT_DIR = Path("results/20260521-150828-merged")
+RESULT_DIR = Path("results/20260521-155039-official-merged-final")
 
 PROVIDER_COLORS = {
     "xai": "#7a7f87",
     "dashscope": "#f06a2a",
     "openai": "#202124",
     "google": "#55ae62",
+    "anthropic": "#c58265",
     "linkapi": "#c58265",
     "deepseek": "#173b8f",
 }
@@ -25,6 +26,7 @@ PROVIDER_BADGES = {
     "dashscope": "Q",
     "openai": "◎",
     "google": "G",
+    "anthropic": "AI",
     "linkapi": "AI",
     "deepseek": "DS",
 }
