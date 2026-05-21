@@ -28,9 +28,9 @@ class RosterTests(unittest.TestCase):
         for config in configs:
             self.assertNotIn(config.reasoning_value, forbidden)
 
-    def test_has_expected_base_model_count(self):
+    def test_has_expanded_base_model_count(self):
         providers_and_models = {(spec.provider, spec.model) for spec in __import__("handsome_bench").ROSTER}
-        self.assertEqual(len(providers_and_models), 20)
+        self.assertGreaterEqual(len(providers_and_models), 35)
 
 
 if __name__ == "__main__":

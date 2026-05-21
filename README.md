@@ -2,19 +2,19 @@
 
 Introducing HandsomeBench, a benchmark that ranks models by how highly they rate my selfie on a scale from 1 to 100.
 
-HandsomeBench is a mostly unserious multimodal model benchmark. It sends the included photo to a roster of frontier vision models and asks each model to answer with a direct 1-100 attractiveness score.
+HandsomeBench is a mostly unserious multimodal model benchmark. It sends the included photo to a roster of frontier vision models and asks each model to answer with a direct 1-100 attractiveness score. The current roster includes OpenAI, Gemini, Grok, Claude via LinkAPI, Qwen via DashScope, and DeepSeek V4 rows marked as skipped because DeepSeek V4 does not currently document image input support.
 
 ## Current Leaderboard
 
 Open the generated chart:
 
-[results/20260521-140032/HandsomeBench.html](results/20260521-140032/HandsomeBench.html)
+[results/20260521-150828-merged/HandsomeBench.html](results/20260521-150828-merged/HandsomeBench.html)
 
 The underlying run artifacts are also included:
 
-- `results/20260521-140032/leaderboard.md`
-- `results/20260521-140032/leaderboard.csv`
-- `results/20260521-140032/raw.jsonl`
+- `results/20260521-150828-merged/leaderboard.md`
+- `results/20260521-150828-merged/leaderboard.csv`
+- `results/20260521-150828-merged/raw.jsonl`
 
 ## Run It
 
@@ -33,6 +33,7 @@ GOOGLE_AI_API_KEY=...
 XAI_API_KEY=...
 LINKAPI_API_KEY=...
 DASHSCOPE_API_KEY=...
+DEEPSEEK_API_KEY=...
 ```
 
 Check the roster and provider availability:

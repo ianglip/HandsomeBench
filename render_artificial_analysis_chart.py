@@ -5,19 +5,19 @@ from __future__ import annotations
 
 import csv
 import html
+import argparse
 from pathlib import Path
 
 
-RESULT_DIR = Path("results/20260521-140032")
-SRC = RESULT_DIR / "leaderboard.csv"
-OUT = RESULT_DIR / "HandsomeBench.html"
+RESULT_DIR = Path("results/20260521-150828-merged")
 
 PROVIDER_COLORS = {
-    "xai": "#202124",
+    "xai": "#7a7f87",
     "dashscope": "#f06a2a",
     "openai": "#202124",
     "google": "#55ae62",
     "linkapi": "#c58265",
+    "deepseek": "#173b8f",
 }
 
 PROVIDER_BADGES = {
@@ -26,6 +26,7 @@ PROVIDER_BADGES = {
     "openai": "◎",
     "google": "G",
     "linkapi": "AI",
+    "deepseek": "DS",
 }
 
 
@@ -40,6 +41,7 @@ def short_label(row: dict[str, str]) -> str:
         ("gpt-", "GPT-"),
         ("gemini-", "Gemini "),
         ("claude-", "Claude "),
+        ("deepseek-", "DeepSeek "),
     ]
     for old, new in parts:
         model = model.replace(old, new)
@@ -55,21 +57,23 @@ def short_label(row: dict[str, str]) -> str:
     return model
 
 
-def load_rows() -> tuple[list[dict[str, str]], int]:
+def load_rows(src: Path) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     valid: list[dict[str, str]] = []
-    invalid = 0
-    with SRC.open(newline="", encoding="utf-8") as handle:
+    invalid: list[dict[str, str]] = []
+    with src.open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
             if row.get("status") == "ok":
                 valid.append(row)
             elif row.get("status"):
-                invalid += 1
+                invalid.append(row)
     valid.sort(key=lambda row: (-(float(row["score"])), float(row.get("latency_ms") or 0)))
     return valid, invalid
 
 
-def render() -> None:
-    rows, invalid = load_rows()
+def render(result_dir: Path = RESULT_DIR) -> None:
+    src = result_dir / "leaderboard.csv"
+    out = result_dir / "HandsomeBench.html"
+    rows, invalid_rows = load_rows(src)
     width = max(930, len(rows) * 29 + 122)
     height = 540
     left = 26
@@ -124,6 +128,20 @@ def render() -> None:
             "</tr>"
         )
 
+    invalid_table_rows = []
+    for row in invalid_rows:
+        provider = row.get("provider") or ""
+        color = PROVIDER_COLORS.get(provider, "#64748b")
+        detail = row.get("error") or row.get("response") or ""
+        invalid_table_rows.append(
+            "<tr>"
+            f'<td><span class="provider-dot" style="background:{color}"></span>{html.escape(provider)}</td>'
+            f"<td>{html.escape(row.get('label') or '')}</td>"
+            f"<td>{html.escape(row.get('status') or '')}</td>"
+            f"<td>{html.escape(detail[:180])}</td>"
+            "</tr>"
+        )
+
     champion = rows[0]
     document = f"""<!doctype html>
 <html lang="en">
@@ -157,6 +175,7 @@ table {{ width:100%; border-collapse:collapse; font-size:12px; }}
 th, td {{ padding:6px 8px; border-bottom:1px solid #eeeeee; text-align:left; white-space:nowrap; }}
 th {{ color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }}
 td:nth-child(2) {{ font-weight:800; }}
+.provider-dot {{ display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:999px; vertical-align:middle; }}
 footer {{ margin-top:8px; color:var(--muted); font-size:11px; }}
 </style>
 </head>
@@ -190,14 +209,27 @@ footer {{ margin-top:8px; color:var(--muted); font-size:11px; }}
       <tbody>{''.join(table_rows)}</tbody>
     </table>
   </section>
-  <footer>Source: {html.escape(str(SRC))}. {invalid} invalid/error rows omitted from chart.</footer>
+  <section class="table-wrap">
+    <table>
+      <thead><tr><th>Provider</th><th>Model</th><th>Status</th><th>Detail</th></tr></thead>
+      <tbody>{''.join(invalid_table_rows)}</tbody>
+    </table>
+  </section>
+  <footer>Source: {html.escape(str(src))}. {len(invalid_rows)} invalid/error/skipped rows omitted from scored bars.</footer>
 </main>
 </body>
 </html>
 """
-    OUT.write_text(document, encoding="utf-8")
-    print(OUT)
+    out.write_text(document, encoding="utf-8")
+    print(out)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Render HandsomeBench chart HTML.")
+    parser.add_argument("--result-dir", type=Path, default=RESULT_DIR)
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    render()
+    args = parse_args()
+    render(args.result_dir)

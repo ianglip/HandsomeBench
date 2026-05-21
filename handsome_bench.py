@@ -76,10 +76,21 @@ class RunConfig:
 ROSTER: tuple[ModelSpec, ...] = (
     ModelSpec("openai", "gpt-5.5-pro", reasoning_kind="effort", reasoning_values=("medium", "high", "xhigh")),
     ModelSpec("openai", "gpt-5.5", reasoning_kind="effort", reasoning_values=("medium", "high", "xhigh")),
+    ModelSpec("linkapi", "claude-opus-4-7", api_model="[次]claude-opus-4-7"),
     ModelSpec("linkapi", "claude-opus-4-7-thinking", label="claude-opus-4-7", api_model="[次]claude-opus-4-7-thinking"),
+    ModelSpec("linkapi", "claude-opus-4-6", api_model="claude-opus-4-6"),
     ModelSpec("linkapi", "claude-opus-4-6-thinking", label="claude-opus-4-6", api_model="claude-opus-4-6-thinking"),
+    ModelSpec("linkapi", "claude-sonnet-4-6", api_model="claude-sonnet-4-6"),
     ModelSpec("linkapi", "claude-sonnet-4-6-thinking", label="claude-sonnet-4-6", api_model="claude-sonnet-4-6-thinking"),
+    ModelSpec("linkapi", "claude-sonnet-4-5-20250929", label="claude-sonnet-4-5", api_model="claude-sonnet-4-5-20250929"),
+    ModelSpec("linkapi", "claude-sonnet-4-5-20250929-thinking", label="claude-sonnet-4-5", api_model="claude-sonnet-4-5-20250929-thinking"),
+    ModelSpec("linkapi", "claude-haiku-4-5-20251001", label="claude-haiku-4-5", api_model="claude-haiku-4-5-20251001"),
+    ModelSpec("linkapi", "claude-opus-4-5-20251101", label="claude-opus-4-5", api_model="claude-opus-4-5-20251101"),
+    ModelSpec("linkapi", "claude-opus-4-5-20251101-thinking", label="claude-opus-4-5", api_model="claude-opus-4-5-20251101-thinking"),
+    ModelSpec("google", "gemini-3-pro-preview", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
     ModelSpec("google", "gemini-3.1-pro-preview", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
+    ModelSpec("google", "gemini-3.1-flash-lite", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
+    ModelSpec("google", "gemini-3.1-flash-lite-preview", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
     ModelSpec("google", "gemini-3.5-flash", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
     ModelSpec("xai", "grok-4.3", reasoning_kind="effort", reasoning_values=("medium", "high")),
     ModelSpec("xai", "grok-4.20-0309-reasoning", label="grok-4.20-reasoning"),
@@ -94,6 +105,10 @@ ROSTER: tuple[ModelSpec, ...] = (
     ModelSpec("openai", "gpt-5.2-pro", reasoning_kind="effort", reasoning_values=("medium", "high", "xhigh")),
     ModelSpec("google", "gemini-3-flash-preview", reasoning_kind="thinkingLevel", reasoning_values=("medium", "high")),
     ModelSpec("google", "gemini-2.5-pro", reasoning_kind="thinkingBudget", reasoning_values=(8192, 32768)),
+    ModelSpec("google", "gemini-2.5-flash", reasoning_kind="thinkingBudget", reasoning_values=(8192, 24576)),
+    ModelSpec("google", "gemini-2.5-flash-lite", reasoning_kind="thinkingBudget", reasoning_values=(8192, 24576)),
+    ModelSpec("deepseek", "deepseek-v4-pro"),
+    ModelSpec("deepseek", "deepseek-v4-flash"),
 )
 
 
@@ -103,6 +118,12 @@ PROVIDER_KEYS = {
     "xai": "XAI_API_KEY",
     "dashscope": "DASHSCOPE_API_KEY",
     "linkapi": "LINKAPI_API_KEY",
+    "deepseek": "DEEPSEEK_API_KEY",
+}
+
+
+UNSUPPORTED_IMAGE_PROVIDERS = {
+    "deepseek": "DeepSeek V4 is listed as a text chat-completion model and does not document image input support.",
 }
 
 
@@ -353,6 +374,8 @@ def make_row(config: RunConfig, status: str, **kwargs: Any) -> dict[str, Any]:
 
 
 def run_one(config: RunConfig, data_url: str, timeout: float) -> dict[str, Any]:
+    if config.provider in UNSUPPORTED_IMAGE_PROVIDERS:
+        return make_row(config, "skipped", error=UNSUPPORTED_IMAGE_PROVIDERS[config.provider])
     key_name = PROVIDER_KEYS[config.provider]
     if not os.environ.get(key_name):
         return make_row(config, "skipped", error=f"Missing {key_name}")
@@ -505,9 +528,13 @@ def preflight(configs: list[RunConfig], timeout: float) -> int:
         ("xai", "https://api.x.ai/v1/models", "XAI_API_KEY"),
         ("dashscope", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models", "DASHSCOPE_API_KEY"),
         ("linkapi", "https://api.linkapi.ai/v1/models", "LINKAPI_API_KEY"),
+        ("deepseek", "https://api.deepseek.com/models", "DEEPSEEK_API_KEY"),
     ]
     available_by_provider: dict[str, set[str]] = {}
+    wanted_providers = {config.provider for config in configs}
     for provider, url, key_name in checks:
+        if provider not in wanted_providers:
+            continue
         if not os.environ.get(key_name):
             continue
         try:
@@ -555,6 +582,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--preflight", action="store_true", help="Check environment, image, and provider model-list endpoints.")
     parser.add_argument("--timeout", type=float, default=180.0, help="Per-request timeout in seconds.")
     parser.add_argument("--limit", type=int, default=None, help="Run only the first N configurations.")
+    parser.add_argument("--providers", help="Comma-separated provider allowlist, for example google,linkapi,deepseek.")
     return parser.parse_args(argv)
 
 
@@ -562,6 +590,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     load_env()
     configs = expand_roster()
+    if args.providers:
+        providers = {provider.strip() for provider in args.providers.split(",") if provider.strip()}
+        configs = [config for config in configs if config.provider in providers]
     if args.limit is not None:
         configs = configs[: args.limit]
     if args.dry_run:
