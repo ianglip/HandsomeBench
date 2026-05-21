@@ -71,7 +71,7 @@ def load_rows() -> tuple[list[dict[str, str]], int]:
 def render() -> None:
     rows, invalid = load_rows()
     width = max(860, len(rows) * 29 + 52)
-    height = 468
+    height = 540
     left = 26
     right = 12
     top = 32
@@ -108,7 +108,7 @@ def render() -> None:
             f"</g>"
         )
         labels.append(
-            f'<text x="{cx:.1f}" y="{baseline + 32}" transform="rotate(60 {cx:.1f} {baseline + 32})" '
+            f'<text x="{cx:.1f}" y="{baseline + 30}" transform="rotate(60 {cx:.1f} {baseline + 30})" '
             f'class="model-label">{html.escape(short_label(row))}</text>'
         )
 

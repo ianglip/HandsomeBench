@@ -1,6 +1,6 @@
 # HandsomeBench
 
-Which model rates Entropy the most handsome, on a scale from 1 to 100?
+Introducing HandsomeBench, a benchmark that ranks models by how highly they rate my selfie on a scale from 1 to 100.
 
 HandsomeBench is a mostly unserious multimodal model benchmark. It sends the included photo to a roster of frontier vision models and asks each model to answer with a direct 1-100 attractiveness score.
 
